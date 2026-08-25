@@ -1,0 +1,25 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /fechamentos/{id} {
+      // O site de caixa precisa criar registros.
+      allow create: if
+        request.resource.data.keys().hasOnly([
+          'operador','credito','debito','pix','vendasDinheiro',
+          'abertura','contado','esperado','diferenca','resultado','criadoEm'
+        ])
+        && request.resource.data.operador is string
+        && request.resource.data.operador.size() > 0
+        && request.resource.data.operador.size() <= 100;
+
+      // O painel admin, conforme solicitado, não usa autenticação.
+      // ATENÇÃO: isso significa que qualquer pessoa que descobrir o endereço
+      // do painel poderá ler/apagar os fechamentos.
+      allow read, delete: if true;
+
+      allow update: if false;
+    }
+  }
+}

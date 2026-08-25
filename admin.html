@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Painel Admin — Histórico de Caixa</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#07111f;color:#eef4ff;font-family:Inter,Arial,sans-serif}.wrap{max-width:1100px;margin:auto;padding:22px}
+.card{background:#101d30;border:1px solid #223552;border-radius:20px;padding:20px;margin-bottom:18px}h1{margin:0 0 5px}.sub{color:#9db0ca}.top{display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+button{border:0;border-radius:11px;padding:12px 15px;font-weight:800;cursor:pointer}.danger{background:#d93652;color:white}.normal{background:#315f9d;color:white}
+.table{overflow:auto}table{width:100%;border-collapse:collapse;min-width:900px}th,td{padding:12px 10px;border-bottom:1px solid #223552;text-align:left;font-size:13px}th{color:#aebed4}
+.ok{color:#42d69b}.bad{color:#ff6378}.surplus{color:#69a2ff}.empty{text-align:center;padding:35px;color:#9db0ca}
+.stats{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}.stat{background:#091524;border:1px solid #223552;border-radius:14px;padding:14px;min-width:160px}.stat b{font-size:20px;display:block;margin-top:4px}
+</style></head>
+<body><div class="wrap">
+<div class="card"><div class="top"><div><h1>📊 Painel Admin</h1><div class="sub">Histórico dos fechamentos de caixa</div></div>
+<button class="danger" id="limpar">🗑 Apagar todo o histórico</button></div>
+<div class="stats"><div class="stat">Fechamentos<b id="qtd">0</b></div><div class="stat">Soma das diferenças<b id="saldo">R$ 0,00</b></div></div></div>
+<div class="card"><div class="table"><table><thead><tr><th>Data/Hora</th><th>Operador</th><th>Crédito</th><th>Débito</th><th>Pix</th><th>Dinheiro</th><th>Abertura</th><th>Contado</th><th>Resultado</th><th></th></tr></thead><tbody id="tbody"></tbody></table></div><div id="empty" class="empty">Carregando...</div></div>
+</div>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import {getFirestore,collection,onSnapshot,query,orderBy,deleteDoc,doc,getDocs,writeBatch} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+/* COLE A MESMA CONFIGURAÇÃO DO FIREBASE AQUI */
+const firebaseConfig = {
+  apiKey: "AIzaSyCmPGnWGvb7B4Mn3-mY9gH7sH87PRC3agY",
+  authDomain: "fechamento-de-caixa-d95b4.firebaseapp.com",
+  projectId: "fechamento-de-caixa-d95b4",
+  storageBucket: "fechamento-de-caixa-d95b4.firebasestorage.app",
+  messagingSenderId: "822136579321",
+  appId: "1:822136579321:web:8f4ff918409a413c072e28",
+  measurementId: "G-53G4TXX9BM"
+};
+const app=initializeApp(firebaseConfig),db=getFirestore(app);
+const money=n=>Number(n||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+const fmt=t=>t?.toDate?t.toDate().toLocaleString("pt-BR"):t?new Date(t).toLocaleString("pt-BR"):"—";
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+const q=query(collection(db,"fechamentos"),orderBy("criadoEm","desc"));
+onSnapshot(q,snap=>{
+ let html="",total=0;
+ snap.forEach(d=>{
+  const x=d.data(), diff=Number(x.diferenca||0); total+=diff;
+  const cls=Math.abs(diff)<.005?"ok":diff>0?"surplus":"bad";
+  const res=Math.abs(diff)<.005?"✅ Correto":diff>0?"💰 Sobrou "+money(diff):"⚠️ Faltou "+money(Math.abs(diff));
+  html+=`<tr><td>${fmt(x.criadoEm)}</td><td>${esc(x.operador)}</td><td>${money(x.credito)}</td><td>${money(x.debito)}</td><td>${money(x.pix)}</td><td>${money(x.vendasDinheiro)}</td><td>${money(x.abertura)}</td><td>${money(x.contado)}</td><td class="${cls}">${res}</td><td><button class="danger" data-id="${d.id}">Excluir</button></td></tr>`;
+ });
+ document.getElementById("tbody").innerHTML=html;
+ document.getElementById("empty").style.display=snap.empty?"block":"none";
+ document.getElementById("empty").textContent=snap.empty?"Nenhum fechamento registrado.":"";
+ document.getElementById("qtd").textContent=snap.size;
+ document.getElementById("saldo").textContent=money(total);
+ document.querySelectorAll("[data-id]").forEach(b=>b.onclick=async()=>{if(confirm("Excluir este fechamento?"))await deleteDoc(doc(db,"fechamentos",b.dataset.id))});
+},e=>document.getElementById("empty").textContent="Erro ao carregar histórico. Confira Firebase e as regras.");
+document.getElementById("limpar").onclick=async()=>{
+ if(!confirm("ATENÇÃO: apagar TODO o histórico?"))return;
+ const snap=await getDocs(collection(db,"fechamentos")); let batch=writeBatch(db);
+ snap.forEach(d=>batch.delete(d.ref)); await batch.commit();
+};
+</script></body></html>
