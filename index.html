@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fechamento de Caixa</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Inter,Arial,sans-serif;background:linear-gradient(135deg,#f8f4ec,#eee8dc);color:#23322d;min-height:100vh}
+.wrap{max-width:720px;margin:auto;padding:24px}.card{background:rgba(255,253,248,.97);border:1px solid #d8c7ae;border-radius:24px;padding:24px;box-shadow:0 20px 50px #6b4b2a22}.brand{text-align:center;margin-bottom:18px}.brand img{width:min(320px,82%);max-height:150px;object-fit:contain;border-radius:14px}.brand-title{font-family:Georgia,serif;color:#b47a3c;font-size:15px;letter-spacing:2px;margin-top:7px;font-weight:700}.brand-line{height:2px;background:linear-gradient(90deg,transparent,#b47a3c,transparent);margin:12px 0 20px}
+h1{margin:0 0 6px;font-size:28px}.sub{color:#9db0ca;margin-bottom:22px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.full{grid-column:1/-1}
+label{display:block;font-size:13px;color:#5c665f;margin-bottom:7px}input,select{width:100%;padding:14px;border-radius:12px;border:1px solid #d6c6ae;background:#fff;color:#26342e;font-size:16px;outline:none}input:focus,select:focus{border-color:#4f8cff}
+button{width:100%;border:0;border-radius:13px;padding:15px;font-size:16px;font-weight:800;cursor:pointer;background:#b47a3c;color:white;margin-top:18px}
+.result{margin-top:18px;padding:18px;border-radius:16px;background:#f5efe4;display:none}.ok{border:1px solid #27c982}.bad{border:1px solid #ff5268}.surplus{border:1px solid #4f8cff}
+.big{font-size:26px;font-weight:900;margin:5px 0}.muted{color:#6d756e}.error{color:#ff7888;margin-top:10px}
+@media(max-width:600px){.grid{grid-template-columns:1fr}.full{grid-column:auto}}
+
+:root{--bg1:#f8f4ec;--bg2:#eee8dc;--text:#23322d;--card:rgba(255,253,248,.97);--border:#d8c7ae;--muted:#6d756e;--input:#fff;--inputText:#26342e;--accent:#b47a3c;--soft:#f5efe4;--line:#ded1bd}
+body.dark{--bg1:#07111f;--bg2:#0d1726;--text:#eef4ff;--card:rgba(16,29,48,.97);--border:#2b405c;--muted:#9db0ca;--input:#091524;--inputText:#eef4ff;--accent:#c89255;--soft:#0f1c2d;--line:#223552}
+body{background:linear-gradient(135deg,var(--bg1),var(--bg2)) !important;color:var(--text) !important}
+.card{background:var(--card) !important;border-color:var(--border) !important}
+.sub,.muted,.empty{color:var(--muted) !important}
+label{color:var(--muted) !important}
+input,select{border-color:var(--border) !important;background:var(--input) !important;color:var(--inputText) !important}
+.result,.stat{background:var(--soft) !important}
+button.normal,#calcular{background:var(--accent) !important}
+.theme-toggle{width:auto;margin:0 0 0 auto;padding:10px 14px;border-radius:12px;background:var(--accent);color:#fff;border:0;font-weight:800;cursor:pointer;box-shadow:0 5px 14px #0002}
+.theme-row{display:flex;justify-content:flex-end;margin-bottom:12px}
+
+</style>
+</head>
+<body>
+<div class="wrap"><div class="card"><div class="theme-row"><button type="button" class="theme-toggle" id="themeToggle">🌙 Modo escuro</button></div><div class="brand"><img src="https://i.postimg.cc/4NSH266z/IMG-20260823-WA0039.jpg" alt="Pacheco Panificadora"><div class="brand-title">PACHECO PANIFICADORA</div></div><div class="brand-line"></div>
+<h1>💰 Fechamento de Caixa</h1><div class="sub">Registre o fechamento.</div>
+<div class="grid">
+<div><label>Nome do operador</label><input id="operador" placeholder="Ex.: João"></div><div><label>Número do caixa</label><select id="caixa"><option value="1">Caixa 1</option><option value="5">Caixa 5</option></select></div>
+<div><label>Crédito (R$)</label><input id="credito" type="number" step="0.01" min="0" value="0"></div>
+<div><label>Débito (R$)</label><input id="debito" type="number" step="0.01" min="0" value="0"></div>
+<div><label>Pix (R$)</label><input id="pix" type="number" step="0.01" min="0" value="0"></div>
+<div><label>Vendas em dinheiro (R$)</label><input id="dinheiroVendas" type="number" step="0.01" min="0" value="0"></div>
+<div><label>Valor de abertura (R$)</label><input id="abertura" type="number" step="0.01" min="0" value="0"></div>
+<div><label>Dinheiro contado no caixa (R$)</label><input id="contado" type="number" step="0.01" min="0" value="0"></div>
+</div>
+<button id="calcular">CALCULAR FECHAMENTO</button>
+<div id="msg" class="result"></div><div id="erro" class="error"></div>
+</div></div>
+
+
+<script>
+(function(){
+  const body=document.body, btn=document.getElementById('themeToggle');
+  const saved=localStorage.getItem('pacheco-theme');
+  if(saved==='dark') body.classList.add('dark');
+  function update(){btn.textContent=body.classList.contains('dark')?'☀️ Modo claro':'🌙 Modo escuro';}
+  update();
+  btn.onclick=function(){
+    body.classList.toggle('dark');
+    localStorage.setItem('pacheco-theme',body.classList.contains('dark')?'dark':'light');
+    update();
+  };
+})();
+</script>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import {getFirestore, collection, addDoc, serverTimestamp} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+/* COLE A CONFIGURAÇÃO DO SEU PROJETO FIREBASE AQUI */
+const firebaseConfig = {
+  apiKey: "AIzaSyCmPGnWGvb7B4Mn3-mY9gH7sH87PRC3agY",
+  authDomain: "fechamento-de-caixa-d95b4.firebaseapp.com",
+  projectId: "fechamento-de-caixa-d95b4",
+  storageBucket: "fechamento-de-caixa-d95b4.firebasestorage.app",
+  messagingSenderId: "822136579321",
+  appId: "1:822136579321:web:8f4ff918409a413c072e28",
+  measurementId: "G-53G4TXX9BM"
+};
+
+const app=initializeApp(firebaseConfig);
+const db=getFirestore(app);
+const $=id=>document.getElementById(id);
+const money=n=>n.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+const num=id=>Number($(id).value||0);
+
+$("calcular").onclick=async()=>{
+  $("erro").textContent="";
+  const operador=$("operador").value.trim();
+  const caixa=$("caixa").value;
+  if(!operador){$("erro").textContent="Digite o nome do operador.";return}
+  if(caixa!=="1" && caixa!=="5"){$("erro").textContent="Selecione o número do caixa.";return}
+  const credito=num("credito"),debito=num("debito"),pix=num("pix");
+  const vendasDinheiro=num("dinheiroVendas"),abertura=num("abertura"),contado=num("contado");
+  const esperado=abertura+vendasDinheiro;
+  const diferenca=contado-esperado;
+  let titulo,classe;
+  if(Math.abs(diferenca)<0.005){titulo="✅ Caixa correto";classe="ok"}
+  else if(diferenca>0){titulo="💰 Sobrou no caixa";classe="surplus"}
+  else{titulo="⚠️ Faltou no caixa";classe="bad"}
+  const texto=Math.abs(diferenca)<0.005?"Nenhuma diferença":money(Math.abs(diferenca));
+  $("msg").className="result "+classe;
+  $("msg").style.display="block";
+  $("msg").innerHTML=`<div>${titulo}</div><div class="big">${texto}</div>
+  <div class="muted">Esperado em dinheiro: ${money(esperado)} · Contado: ${money(contado)}</div>`;
+  try{
+    await addDoc(collection(db,"fechamentos"),{
+      operador,caixa,credito,debito,pix,vendasDinheiro,abertura,contado,esperado,diferenca,
+      resultado: Math.abs(diferenca)<0.005?"correto":diferenca>0?"sobrou":"faltou",
+      criadoEm: serverTimestamp()
+    });
+  }catch(e){$("erro").textContent="O cálculo foi feito, mas não foi possível salvar no Firestore. Confira a configuração e as regras."}
+};
+</script>
+</body></html>
