@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Painel Admin — Histórico de Caixa</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#f8f4ec,#eee8dc);color:#23322d;font-family:Inter,Arial,sans-serif}.wrap{max-width:1100px;margin:auto;padding:22px}
+.card{background:rgba(255,253,248,.97);border:1px solid #d8c7ae;border-radius:22px;padding:20px;margin-bottom:18px;box-shadow:0 16px 40px #6b4b2a18}.brand{text-align:center;margin-bottom:10px}.brand img{width:min(300px,70%);max-height:120px;object-fit:contain;border-radius:14px}.brand-line{height:2px;background:linear-gradient(90deg,transparent,#b47a3c,transparent);margin:10px 0 18px}h1{margin:0 0 5px}.sub{color:#9db0ca}.top{display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+button{border:0;border-radius:11px;padding:12px 15px;font-weight:800;cursor:pointer}.danger{background:#a93636;color:white}.normal{background:#b47a3c;color:white}
+.table{overflow:auto}table{width:100%;border-collapse:collapse;min-width:900px}th,td{padding:12px 10px;border-bottom:1px solid #ded1bd;text-align:left;font-size:13px}th{color:#6b705f}
+.ok{color:#42d69b}.bad{color:#ff6378}.surplus{color:#69a2ff}.empty{text-align:center;padding:35px;color:#9db0ca}
+.stats{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}.stat{background:#f5efe4;border:1px solid #d8c7ae;border-radius:14px;padding:14px;min-width:160px}.stat b{font-size:20px;display:block;margin-top:4px}.day-list{display:grid;gap:12px}.day-card{background:var(--soft);border:1px solid var(--border);border-radius:16px;padding:15px}.day-head{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}.day-head strong{font-size:17px}.day-total{font-size:21px;font-weight:900}.day-info{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}.day-info span{padding:7px 9px;border-radius:9px;background:var(--card);border:1px solid var(--border);font-size:12px}.section-title{margin:0 0 12px;font-size:18px}
+
+:root{--bg1:#f8f4ec;--bg2:#eee8dc;--text:#23322d;--card:rgba(255,253,248,.97);--border:#d8c7ae;--muted:#6d756e;--input:#fff;--inputText:#26342e;--accent:#b47a3c;--soft:#f5efe4;--line:#ded1bd}
+body.dark{--bg1:#07111f;--bg2:#0d1726;--text:#eef4ff;--card:rgba(16,29,48,.97);--border:#2b405c;--muted:#9db0ca;--input:#091524;--inputText:#eef4ff;--accent:#c89255;--soft:#0f1c2d;--line:#223552}
+body{background:linear-gradient(135deg,var(--bg1),var(--bg2)) !important;color:var(--text) !important}
+.card{background:var(--card) !important;border-color:var(--border) !important}
+.sub,.muted,.empty{color:var(--muted) !important}
+label{color:var(--muted) !important}
+input{border-color:var(--border) !important;background:var(--input) !important;color:var(--inputText) !important}
+.result,.stat{background:var(--soft) !important}
+button.normal,#calcular{background:var(--accent) !important}
+.theme-toggle{width:auto;margin:0 0 0 auto;padding:10px 14px;border-radius:12px;background:var(--accent);color:#fff;border:0;font-weight:800;cursor:pointer;box-shadow:0 5px 14px #0002}
+.theme-row{display:flex;justify-content:flex-end;margin-bottom:12px}
+
+</style></head>
+<body><div class="wrap"><div class="theme-row"><button type="button" class="theme-toggle" id="themeToggle">🌙 Modo escuro</button></div>
+<div class="card"><div class="brand"><img src="https://i.postimg.cc/4NSH266z/IMG-20260823-WA0039.jpg" alt="Pacheco Panificadora"></div><div class="brand-line"></div><div class="top"><div><h1>📊 Painel Admin</h1><div class="sub">Histórico dos fechamentos de caixa</div></div>
+<button class="danger" id="limpar">🗑 Apagar todo o histórico</button></div>
+<div class="stats">
+<div class="stat">Fechamentos<b id="qtd">0</b></div>
+<div class="stat">💳 Crédito<b id="totalCredito">R$ 0,00</b></div>
+<div class="stat">💳 Débito<b id="totalDebito">R$ 0,00</b></div>
+<div class="stat">📱 Pix<b id="totalPix">R$ 0,00</b></div>
+<div class="stat">💵 Dinheiro<b id="totalDinheiro">R$ 0,00</b></div>
+<div class="stat">🧾 Total vendido<b id="totalVendas">R$ 0,00</b></div>
+<div class="stat">⚖️ Diferenças<b id="saldo">R$ 0,00</b></div>
+</div></div>
+<div class="card"><h2 class="section-title">📅 Total vendido por dia</h2><div id="dailyList" class="day-list"></div><div id="dailyEmpty" class="empty" style="display:none">Nenhum fechamento registrado.</div></div><div class="card"><h2 class="section-title">📆 Total vendido por semana</h2><div id="weeklyList" class="day-list"></div></div><div class="card"><h2 class="section-title">🗓 Total vendido por mês</h2><div id="monthlyList" class="day-list"></div></div><div class="card"><div class="table"><table><thead><tr><th>Data/Hora</th><th>Caixa</th><th>Operador</th><th>Crédito</th><th>Débito</th><th>Pix</th><th>Dinheiro</th><th>Abertura</th><th>Contado</th><th>Resultado</th><th></th></tr></thead><tbody id="tbody"></tbody></table></div><div id="empty" class="empty">Carregando...</div></div>
+</div>
+
+<script>
+(function(){
+  const body=document.body, btn=document.getElementById('themeToggle');
+  const saved=localStorage.getItem('pacheco-theme');
+  if(saved==='dark') body.classList.add('dark');
+  function update(){btn.textContent=body.classList.contains('dark')?'☀️ Modo claro':'🌙 Modo escuro';}
+  update();
+  btn.onclick=function(){
+    body.classList.toggle('dark');
+    localStorage.setItem('pacheco-theme',body.classList.contains('dark')?'dark':'light');
+    update();
+  };
+})();
+</script>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import {getFirestore,collection,onSnapshot,query,orderBy,deleteDoc,doc,getDocs,writeBatch} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+/* COLE A MESMA CONFIGURAÇÃO DO FIREBASE AQUI */
+const firebaseConfig = {
+  apiKey: "AIzaSyCmPGnWGvb7B4Mn3-mY9gH7sH87PRC3agY",
+  authDomain: "fechamento-de-caixa-d95b4.firebaseapp.com",
+  projectId: "fechamento-de-caixa-d95b4",
+  storageBucket: "fechamento-de-caixa-d95b4.firebasestorage.app",
+  messagingSenderId: "822136579321",
+  appId: "1:822136579321:web:8f4ff918409a413c072e28",
+  measurementId: "G-53G4TXX9BM"
+};
+const app=initializeApp(firebaseConfig),db=getFirestore(app);
+const money=n=>Number(n||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+const fmt=t=>t?.toDate?t.toDate().toLocaleString("pt-BR"):t?new Date(t).toLocaleString("pt-BR"):"—";
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+const q=query(collection(db,"fechamentos"),orderBy("criadoEm","desc"));
+onSnapshot(q,snap=>{
+  let html="",total=0,totalCredito=0,totalDebito=0,totalPix=0,totalDinheiro=0;
+  const dias={}, semanas={}, meses={};
+
+  snap.forEach(d=>{
+    const x=d.data(), diff=Number(x.diferenca||0);
+    const credito=Number(x.credito||0);
+    const debito=Number(x.debito||0);
+    const pix=Number(x.pix||0);
+    const dinheiro=Number(x.vendasDinheiro||0);
+    const vendido=credito+debito+pix+dinheiro;
+
+    total+=diff;
+    totalCredito+=credito;
+    totalDebito+=debito;
+    totalPix+=pix;
+    totalDinheiro+=dinheiro;
+
+    // Usa a data do próprio fechamento. Assim, dois fechamentos no mesmo dia
+    // (por exemplo, manhã e noite) ficam no mesmo total diário.
+    const dataObj=x.criadoEm?.toDate ? x.criadoEm.toDate() : (x.criadoEm ? new Date(x.criadoEm) : null);
+    const chave=dataObj && !isNaN(dataObj) ?
+      `${dataObj.getFullYear()}-${String(dataObj.getMonth()+1).padStart(2,"0")}-${String(dataObj.getDate()).padStart(2,"0")}` :
+      "sem-data";
+
+    // O fechamento da noite representa o acumulado total do dia.
+    // O fechamento do meio-dia fica somente no histórico e é usado para
+    // comparar a evolução até a noite, evitando somar vendas duas vezes.
+    if(!dias[chave]) dias[chave]={data:dataObj,fechamentos:0,ultimo:null,total:0,credito:0,debito:0,pix:0,dinheiro:0};
+    dias[chave].fechamentos++;
+
+    const hora=dataObj ? dataObj.getHours() : 0;
+    const fechamentoAtual={data:dataObj,hora,credito,debito,pix,dinheiro,total:vendido};
+    if(!dias[chave].ultimo || dataObj > dias[chave].ultimo.data){
+      dias[chave].ultimo=fechamentoAtual;
+      dias[chave].total=vendido;
+      dias[chave].credito=credito;
+      dias[chave].debito=debito;
+      dias[chave].pix=pix;
+      dias[chave].dinheiro=dinheiro;
+    }
+
+    const cls=Math.abs(diff)<.005?"ok":diff>0?"surplus":"bad";
+    const res=Math.abs(diff)<.005?"✅ Correto":diff>0?"💰 Sobrou "+money(diff):"⚠️ Faltou "+money(Math.abs(diff));
+    html+=`<tr><td>${fmt(x.criadoEm)}</td><td>Caixa ${esc(x.caixa || "—")}</td><td>${esc(x.operador)}</td><td>${money(credito)}</td><td>${money(debito)}</td><td>${money(pix)}</td><td>${money(dinheiro)}</td><td>${money(x.abertura)}</td><td>${money(x.contado)}</td><td class="${cls}">${res}</td><td><button class="danger" data-id="${d.id}">Excluir</button></td></tr>`;
+  });
+
+  document.getElementById("tbody").innerHTML=html;
+  document.getElementById("empty").style.display=snap.empty?"block":"none";
+  document.getElementById("empty").textContent=snap.empty?"Nenhum fechamento registrado.":"";
+  document.getElementById("qtd").textContent=snap.size;
+  document.getElementById("totalCredito").textContent=money(totalCredito);
+  document.getElementById("totalDebito").textContent=money(totalDebito);
+  document.getElementById("totalPix").textContent=money(totalPix);
+  document.getElementById("totalDinheiro").textContent=money(totalDinheiro);
+  document.getElementById("totalVendas").textContent=money(totalCredito+totalDebito+totalPix+totalDinheiro);
+  document.getElementById("saldo").textContent=money(total);
+
+  const dailyHtml=Object.entries(dias)
+    .sort((a,b)=>b[0].localeCompare(a[0]))
+    .map(([chave,d])=>{
+      const label=d.data && !isNaN(d.data) ?
+        d.data.toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"2-digit",year:"numeric"}) :
+        "Data não informada";
+      return `<div class="day-card">
+        <div class="day-head">
+          <strong>📅 ${esc(label)}</strong>
+          <span class="day-total">${money(d.total)}</span>
+        </div>
+        <div class="day-info">
+          <span>🧾 ${d.fechamentos} fechamento${d.fechamentos===1?"":"s"}</span>
+          <span>💳 Crédito: ${money(d.credito)}</span>
+          <span>💳 Débito: ${money(d.debito)}</span>
+          <span>📱 Pix: ${money(d.pix)}</span>
+          <span>💵 Dinheiro: ${money(d.dinheiro)}</span>
+        </div>
+      </div>`;
+    }).join("");
+
+  document.getElementById("dailyList").innerHTML=dailyHtml;
+  document.getElementById("dailyEmpty").style.display=snap.empty?"block":"none";
+
+  const cardResumo=(titulo,obj,label)=>Object.entries(obj).sort((a,b)=>b[0].localeCompare(a[0])).map(([k,v])=>`<div class="day-card"><div class="day-head"><strong>${titulo} ${esc(label(v.data))}</strong><span class="day-total">${money(v.total)}</span></div></div>`).join("");
+  document.getElementById("weeklyList").innerHTML=cardResumo("Semana",semanas,d=>d.toLocaleDateString("pt-BR"));
+  document.getElementById("monthlyList").innerHTML=cardResumo("Mês",meses,d=>d.toLocaleDateString("pt-BR",{month:"long",year:"numeric"}));
+
+  document.querySelectorAll("[data-id]").forEach(b=>b.onclick=async()=>{
+    if(confirm("Excluir este fechamento?")) await deleteDoc(doc(db,"fechamentos",b.dataset.id));
+  });
+},e=>document.getElementById("empty").textContent="Erro ao carregar histórico. Confira Firebase e as regras.");
+document.getElementById("limpar").onclick=async()=>{
+ if(!confirm("ATENÇÃO: apagar TODO o histórico?"))return;
+ const snap=await getDocs(collection(db,"fechamentos")); let batch=writeBatch(db);
+ snap.forEach(d=>batch.delete(d.ref)); await batch.commit();
+};
+</script>
+<!-- Periodos: dia, semana e mes separados; mes anterior permanece no historico. -->
+</body></html>
+
+<div class="card" id="filtros-periodo" style="margin-top:18px">
+  <h2 class="section-title">📊 Vendas por período</h2>
+  <div class="stats">
+    <div class="stat">📅 Hoje<b id="vendaDia">R$ 0,00</b></div>
+    <div class="stat">🗓️ Semana<b id="vendaSemana">R$ 0,00</b></div>
+    <div class="stat">📆 Mês selecionado<b id="vendaMes">R$ 0,00</b></div>
+  </div>
+  <div style="margin-top:12px">
+    <label>Escolha o mês:</label>
+    <select id="mesEscolhido">
+      <option value="0">Mês 1</option><option value="1">Mês 2</option>
+      <option value="2">Mês 3</option><option value="3">Mês 4</option>
+      <option value="4">Mês 5</option><option value="5">Mês 6</option>
+      <option value="6">Mês 7</option><option value="7">Mês 8</option>
+      <option value="8">Mês 9</option><option value="9">Mês 10</option>
+      <option value="10">Mês 11</option><option value="11">Mês 12</option>
+    </select>
+  </div>
+</div>
